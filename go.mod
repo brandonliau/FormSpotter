@@ -1,4 +1,4 @@
-module FormSniper
+module FormSpotter
 
 go 1.23.1
 
