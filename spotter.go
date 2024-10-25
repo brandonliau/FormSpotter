@@ -17,13 +17,27 @@ func (runTimeData *RunTimeData) startTicker() {
 	fmt.Printf("SUCCESS @ %s : START MONITORING\n", time.Now().Format("2006-01-02 15:04:05.00000"))
 }
 
-func stopTicker() {
+func (runTimeData *RunTimeData) stopTicker() {
 	if checkTicker.running {
 		checkClose <- true
 		checkTicker.running = false
 		checkTicker.ticker.Stop()
 		fmt.Printf("SUCCESS @ %s : STOP MONITORING\n", time.Now().Format("2006-01-02 15:04:05.00000"))
 	}
+	for memberID := range runTimeData.GetSubscribed() {
+		runTimeData.UpdateSeen(memberID, false)
+	}
+	fmt.Printf("SUCCESS @ %s : RESET SEEN STATUS\n", time.Now().Format("2006-01-02 15:04:05.00000"))
+}
+
+func (runTimeData *RunTimeData) getForm() (string, error) {
+	resp, err := http.Get(runTimeData.Url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	return string(body), err
 }
 
 func (runTimeData *RunTimeData) Check() {
@@ -31,13 +45,12 @@ func (runTimeData *RunTimeData) Check() {
 	for {
 		select {
 		case <-checkTicker.ticker.C:
-			resp, err := http.Get(runTimeData.Url)
+			body, err := runTimeData.getForm()
 			if err != nil {
-				panic(err)
+				fmt.Printf("FAILURE @ %s : %swh\n", time.Now().Format("2006-01-02 15:04:05.00000"), err)
+				continue
 			}
-			defer resp.Body.Close()
-			body, _ := io.ReadAll(resp.Body)
-			closed := strings.Contains(string(body), "no longer accepting responses")
+			closed := strings.Contains(body, "no longer accepting responses")
 			timePassed := int(time.Since(lastNotification).Seconds())
 			if !closed && timePassed >= runTimeData.Cooldown {
 				fmt.Printf("SUCCESS @ %s : COOLDOWN PASSED - ALERTING USERS\n", time.Now().Format("2006-01-02 15:04:05.00000"))
@@ -55,9 +68,6 @@ func (runTimeData *RunTimeData) Check() {
 				lastNotification = time.Now()
 			}
 		case <-checkClose:
-			for memberID := range runTimeData.GetSubscribed() {
-				runTimeData.UpdateSeen(memberID, false)
-			}
 			return
 		}
 	}

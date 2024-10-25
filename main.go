@@ -64,12 +64,11 @@ func main() {
 	s.Open()
 	fmt.Printf("SUCCESS @ %s : ESTABLISH WEBSOCKET CONNECTION\n", time.Now().Format("2006-01-02 15:04:05.00000"))
 	s.ApplicationCommandBulkOverwrite(s.State.User.ID, "", Commands)
-	fmt.Printf("SUCCESS @ %s : REGISTER ALL COMMANDS\n", time.Now().Format("2006-01-02 15:04:05.00000"))
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
-	stopTicker()
+	runTimeData.stopTicker()
 
 	s.Close()
 	fmt.Printf("SUCCESS @ %s : CLOSE WEBSOCKET CONNECTION\n", time.Now().Format("2006-01-02 15:04:05.00000"))

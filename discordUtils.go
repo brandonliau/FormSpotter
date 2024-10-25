@@ -36,9 +36,13 @@ func (runTimeData *RunTimeData) InitHandlers() {
 
 /* EVENT HANDLERS */
 func (runTimeData *RunTimeData) OnReady(s *discordgo.Session, r *discordgo.Ready) {
-	scheduler.AddFunc(runTimeData.StartTime, runTimeData.startTicker)
-	scheduler.AddFunc(runTimeData.StopTime, stopTicker)
-	scheduler.Start()
+	if runTimeData.StartTime == "0 0 0 0 0" {
+		runTimeData.startTicker()
+	} else {
+		scheduler.AddFunc(runTimeData.StartTime, runTimeData.startTicker)
+		scheduler.AddFunc(runTimeData.StopTime, runTimeData.stopTicker)
+		scheduler.Start()
+	}
 	s.UpdateCustomStatus("👁️‍🗨️ Monitoring...")
 	fmt.Println("***************************** BOT RUNNING *****************************")
 }
